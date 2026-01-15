@@ -81,7 +81,7 @@ function App() {
 
   return (
     <div style={{ padding: "20px", maxWidth: "400px" }}>
-      <h2>React Validation App</h2>
+      <h2>React Validation Apps</h2>
 
       {/* Add Input */}
       <input
