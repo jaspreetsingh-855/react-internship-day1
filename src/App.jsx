@@ -1,55 +1,81 @@
 import { useState } from "react";
 
 function App() {
-  // Store input value
+  // Add input
   const [input, setInput] = useState("");
-
-  // Store list items
   const [items, setItems] = useState([]);
-
-  // Store validation message
   const [message, setMessage] = useState("");
 
-  // ---------- VALIDATION LOGIC ----------
-  const trimmedInput = input.trim();
+  // Edit states
+  const [editIndex, setEditIndex] = useState(null);
+  const [editValue, setEditValue] = useState("");
 
-  const isTooShort = trimmedInput.length < 3;
-  const hasNumber = /\d/.test(trimmedInput);
-  const isDuplicate = items.some(
-    (item) => item.toLowerCase() === trimmedInput.toLowerCase()
-  );
+  // ---------- VALIDATION FUNCTION ----------
+  function validate(value, index = null) {
+    const trimmed = value.trim();
 
-  const isInvalid =
-    isTooShort || hasNumber || trimmedInput !== input || isDuplicate;
+    if (trimmed.length < 3) return "Minimum 3 characters required";
+    if (/\d/.test(trimmed)) return "Numbers are not allowed";
+    if (trimmed !== value) return "No leading or trailing spaces allowed";
+    if (
+      items.some(
+        (item, i) =>
+          item.toLowerCase() === trimmed.toLowerCase() && i !== index
+      )
+    )
+      return "Item already exists";
 
-  // ---------- HANDLE INPUT ----------
+    return "";
+  }
+
+  // ---------- ADD INPUT CHANGE ----------
   function handleChange(e) {
     const value = e.target.value;
     setInput(value);
-
-    if (value.trim().length < 3) {
-      setMessage("Minimum 3 characters required");
-    } else if (/\d/.test(value)) {
-      setMessage("Numbers are not allowed");
-    } else if (value !== value.trim()) {
-      setMessage("No leading or trailing spaces allowed");
-    } else if (
-      items.some(
-        (item) => item.toLowerCase() === value.trim().toLowerCase()
-      )
-    ) {
-      setMessage("Item already exists");
-    } else {
-      setMessage("Looks good ✅");
-    }
+    setMessage(validate(value));
   }
 
   // ---------- ADD ITEM ----------
   function handleAdd() {
-    if (isInvalid) return;
+    const error = validate(input);
+    if (error) {
+      setMessage(error);
+      return;
+    }
 
-    setItems([...items, trimmedInput]);
+    setItems([...items, input.trim()]);
     setInput("");
+    setMessage("");
+  }
+
+  // ---------- EDIT ----------
+  function handleEdit(index) {
+    setEditIndex(index);
+    setEditValue(items[index]);
+    setMessage("");
+  }
+
+  // ---------- SAVE ----------
+  function handleSave(index) {
+    const error = validate(editValue, index);
+    if (error) {
+      setMessage(error);
+      return;
+    }
+
+    const updated = [...items];
+    updated[index] = editValue.trim();
+    setItems(updated);
+
+    setEditIndex(null);
+    setEditValue("");
+    setMessage("");
+  }
+
+  // ---------- CANCEL ----------
+  function handleCancel() {
+    setEditIndex(null);
+    setEditValue("");
     setMessage("");
   }
 
@@ -57,32 +83,49 @@ function App() {
     <div style={{ padding: "20px", maxWidth: "400px" }}>
       <h2>React Validation App</h2>
 
-      {/* Input */}
+      {/* Add Input */}
       <input
         type="text"
         value={input}
         onChange={handleChange}
-        placeholder="Enter item"
+        placeholder="Enter items here"
       />
+      <button onClick={handleAdd}>Add</button>
 
-      {/* Add Button */}
-      <button onClick={handleAdd} disabled={isInvalid}>
-        Add
-      </button>
-
-      {/* Status Message */}
+      {/* Message */}
       {message && <p>{message}</p>}
 
-      {/* Total Count */}
+      {/* Total */}
       <p>Total items: {items.length}</p>
 
-      {/* Empty State */}
+      {/* List */}
       {items.length === 0 ? (
         <p>No items added yet</p>
       ) : (
         <ul>
           {items.map((item, index) => (
-            <li key={index}>{item}</li>
+            <li key={index} style={{ marginBottom: "8px" }}>
+              {editIndex === index ? (
+                <>
+                  <input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                  />
+                  <button onClick={() => handleSave(index)}>Save</button>
+                  <button onClick={handleCancel}>Cancel</button>
+                </>
+              ) : (
+                <>
+                  <span>{item}</span>
+                  <button
+                    style={{ marginLeft: "10px" }}
+                    onClick={() => handleEdit(index)}
+                  >
+                    Edit
+                  </button>
+                </>
+              )}
+            </li>
           ))}
         </ul>
       )}
